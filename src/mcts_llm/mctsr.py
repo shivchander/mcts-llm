@@ -23,6 +23,7 @@ import tqdm
 from .prompt_configs import (
     llama_3_8b_prompt_config,
     gpt_4o_prompt_config,
+    qwen_prompt_config,
     RefineResponse,
 )
 import numpy as np
@@ -423,6 +424,121 @@ class MCTSrGPT4o(MCTSr):
                     messages=messages,
                     model=gpt_4o_prompt_config.model,
                     max_tokens=4000,
+                )
+                assert response.choices[0].message.content is not None
+                return int(response.choices[0].message.content)
+            except ValueError:
+                messages.extend(
+                    [
+                        {
+                            "role": "assistant",
+                            "content": response.choices[0].message.content,
+                        },
+                        {
+                            "role": "user",
+                            "content": "Failed to parse reward as an integer.",
+                        },
+                    ]
+                )
+                if attempt == 2:
+                    raise
+
+
+class MCTSrQwen(MCTSr):
+    def zero_shot(self) -> str:
+        response = openai_chat_completion(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Please reason step by step, and put your final answer within \\boxed{}.",
+                },
+                {
+                    "role": "user",
+                    "content": f"<problem>\n{self.problem}\n</problem>",
+                },
+            ],
+            model=qwen_prompt_config.model,
+            base_url=qwen_prompt_config.base_url,
+            max_tokens=8192,
+        )
+        assert response.choices[0].message.content is not None
+        return response.choices[0].message.content
+
+    def self_refine(self, node: MCTSNode) -> MCTSNode:
+        critique_response = openai_chat_completion(
+            messages=[
+                {
+                    "role": "system",
+                    "content": qwen_prompt_config.critic_system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": "\n\n".join(
+                        [
+                            f"<problem>\n{self.problem}\n</problem>",
+                            f"<current_answer>\n{node.answer}\n</current_answer>",
+                        ]
+                    ),
+                },
+            ],
+            model=qwen_prompt_config.model,
+            base_url=qwen_prompt_config.base_url,
+            max_tokens=4000,
+        )
+        critique = critique_response.choices[0].message.content
+        assert critique is not None
+        self.critiques.append(critique)
+
+        refined_answer_response = openai_chat_completion(
+            messages=[
+                {
+                    "role": "system",
+                    "content": qwen_prompt_config.refine_system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": "\n\n".join(
+                        [
+                            f"<problem>\n{self.problem}\n</problem>",
+                            f"<current_answer>\n{node.answer}\n</current_answer>",
+                            f"<critique>\n{critique}\n</critique>",
+                        ]
+                    ),
+                },
+            ],
+            model=qwen_prompt_config.model,
+            base_url=qwen_prompt_config.base_url,
+            max_tokens=4000,
+        )
+        refined_answer = refined_answer_response.choices[0].message.content
+        assert refined_answer is not None
+        self.refinements.append(refined_answer)
+
+        return MCTSNode(answer=refined_answer, parent=node)
+
+    def _evaluate_answer(self, node: MCTSNode) -> int:
+        messages = [
+            {
+                "role": "system",
+                "content": qwen_prompt_config.evaluate_system_prompt,
+            },
+            {
+                "role": "user",
+                "content": "\n\n".join(
+                    [
+                        f"<problem>\n{self.problem}\n</problem>",
+                        f"<answer>\n{node.answer}\n</answer>",
+                    ]
+                ),
+            },
+        ]
+        for attempt in range(3):
+            try:
+                response = openai_chat_completion(
+                    messages=messages,
+                    model=qwen_prompt_config.model,
+                    base_url=qwen_prompt_config.base_url,
+                    max_tokens=8192,
                 )
                 assert response.choices[0].message.content is not None
                 return int(response.choices[0].message.content)

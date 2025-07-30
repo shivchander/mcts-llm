@@ -26,6 +26,9 @@ def get_fireworks_api_key() -> str:
 def _get_openai_client(base_url: str | None = None) -> openai.Client:
     if base_url == FIREWORKS_BASE_URL:
         api_key = get_fireworks_api_key()
+    elif base_url and "localhost" in base_url:
+        # For local models, use a dummy API key
+        api_key = "dummy-key"
     else:
         api_key = get_openai_api_key()
     return openai.Client(api_key=api_key, base_url=base_url)
