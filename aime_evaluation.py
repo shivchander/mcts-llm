@@ -26,7 +26,7 @@ from src.mcts_llm.llm import openai_chat_completion
 from src.mcts_llm.prompt_configs import PromptConfig
 
 
-def truncate_text(text: str, max_chars: int = 1000) -> str:
+def truncate_text(text: str, max_chars: int = 400) -> str:
     """Truncate text to fit within token limits."""
     if len(text) <= max_chars:
         return text
@@ -73,7 +73,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=2000,
+                max_tokens=1500,
             )
             assert response.choices[0].message.content is not None
             return response.choices[0].message.content
@@ -89,15 +89,15 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                         "role": "user",
                         "content": "\n\n".join(
                             [
-                                f"<problem>\n{truncate_text(self.problem, 800)}\n</problem>",
-                                f"<current_answer>\n{truncate_text(node.answer, 800)}\n</current_answer>",
+                                f"<problem>\n{truncate_text(self.problem, 400)}\n</problem>",
+                                f"<current_answer>\n{truncate_text(node.answer, 400)}\n</current_answer>",
                             ]
                         ),
                     },
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=2000,
+                max_tokens=1500,
             )
             critique = critique_response.choices[0].message.content
             assert critique is not None
@@ -113,16 +113,16 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                         "role": "user",
                         "content": "\n\n".join(
                             [
-                                f"<problem>\n{truncate_text(self.problem, 800)}\n</problem>",
-                                f"<current_answer>\n{truncate_text(node.answer, 800)}\n</current_answer>",
-                                f"<critique>\n{truncate_text(critique, 600)}\n</critique>",
+                                f"<problem>\n{truncate_text(self.problem, 400)}\n</problem>",
+                                f"<current_answer>\n{truncate_text(node.answer, 400)}\n</current_answer>",
+                                f"<critique>\n{truncate_text(critique, 300)}\n</critique>",
                             ]
                         ),
                     },
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=2000,
+                max_tokens=1500,
             )
             refined_answer = refined_answer_response.choices[0].message.content
             assert refined_answer is not None
@@ -140,8 +140,8 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                     "role": "user",
                     "content": "\n\n".join(
                         [
-                            f"<problem>\n{truncate_text(self.problem, 1000)}\n</problem>",
-                            f"<answer>\n{truncate_text(node.answer, 1000)}\n</answer>",
+                            f"<problem>\n{truncate_text(self.problem, 400)}\n</problem>",
+                            f"<answer>\n{truncate_text(node.answer, 400)}\n</answer>",
                         ]
                     ),
                 },
@@ -152,7 +152,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                         messages=messages,
                         model=prompt_config.model,
                         base_url=prompt_config.base_url,
-                        max_tokens=2000,
+                        max_tokens=1500,
                     )
                     assert response.choices[0].message.content is not None
                     return int(response.choices[0].message.content)
