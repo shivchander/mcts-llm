@@ -66,7 +66,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=4000,
+                max_tokens=3500,
             )
             assert response.choices[0].message.content is not None
             return response.choices[0].message.content
@@ -90,7 +90,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=4000,
+                max_tokens=3500,
             )
             critique = critique_response.choices[0].message.content
             assert critique is not None
@@ -115,7 +115,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                 ],
                 model=prompt_config.model,
                 base_url=prompt_config.base_url,
-                max_tokens=4000,
+                max_tokens=3500,
             )
             refined_answer = refined_answer_response.choices[0].message.content
             assert refined_answer is not None
@@ -145,7 +145,7 @@ Refine the answer based on the critique. Your refined answer should be a direct 
                         messages=messages,
                         model=prompt_config.model,
                         base_url=prompt_config.base_url,
-                        max_tokens=4000,
+                        max_tokens=3500,
                     )
                     assert response.choices[0].message.content is not None
                     return int(response.choices[0].message.content)
